@@ -158,11 +158,11 @@ MEDICAL_CONDITIONS_DB = [
     },
     {
         "disease": "Acute Meningitis",
-        "keywords": ["stiff neck", "neck stiffness", "cannot bend neck", "high fever stiff neck", "severe headache fever neck stiffness", "meningitis"],
-        "required_indicators": {},
+        "keywords": ["stiff neck", "photophobia fever headache", "unable to touch chin to chest", "neck stiffness high fever", "meningitis", "brudzinski", "kernig"],
+        "required_indicators": {"fever": "Yes"},
         "base_risk": "High",
-        "description": "Acute inflammation of the protective membranes covering the brain and spinal cord.",
-        "urgency": "EMERGENCY: Immediate hospital emergency admission required."
+        "description": "Life-threatening inflammation of the protective membranes covering the brain and spinal cord.",
+        "urgency": "EMERGENCY: Immediate emergency hospital admission and lumbar puncture required."
     },
     {
         "disease": "Typhoid Fever / Enteric Fever",
@@ -213,6 +213,148 @@ MEDICAL_CONDITIONS_DB = [
         "urgency": "Monitor arterial pressure every 30 minutes; seek medical care if >180/120 mmHg."
     }
 ]
+
+# Clinical AI Medication Knowledge Base mapping conditions to recommended prescription protocols
+DISEASE_MEDICATIONS_DB: Dict[str, List[Dict[str, str]]] = {
+    "covid": [
+        {"name": "Paracetamol", "dosage": "650 mg", "frequency": "Every 6-8 hours PRN", "duration": "5 days", "type": "Antipyretic / Analgesic", "instructions": "Take after meals for fever/myalgia; do not exceed 3000mg/24h."},
+        {"name": "N-Acetylcysteine (NAC)", "dosage": "600 mg", "frequency": "Once daily effervescent", "duration": "5 days", "type": "Mucolytic & Antioxidant", "instructions": "Dissolve in glass of water after food."},
+        {"name": "Vitamin C + Zinc Chewable", "dosage": "500 mg + 50 mg", "frequency": "Once daily", "duration": "10 days", "type": "Immune Supplement", "instructions": "Take after breakfast."},
+        {"name": "Budesonide Inhaler", "dosage": "200 mcg", "frequency": "2 puffs twice daily", "duration": "5-7 days", "type": "Inhaled Corticosteroid", "instructions": "Rinse mouth thoroughly with water after inhalation."}
+    ],
+    "malaria": [
+        {"name": "Artemether + Lumefantrine", "dosage": "20 mg / 120 mg (4 tabs)", "frequency": "Twice daily (0h, 8h, 24h, 36h, 48h, 60h)", "duration": "3 days", "type": "ACT Antimalarial", "instructions": "Take with high-fat meal or whole milk to maximize bioavailability."},
+        {"name": "Paracetamol", "dosage": "650 mg", "frequency": "Every 6 hours PRN", "duration": "3 days", "type": "Antipyretic", "instructions": "For fever control during rigors."},
+        {"name": "Oral Rehydration Salts (ORS)", "dosage": "1 Sachet in 1L water", "frequency": "Sip throughout day", "duration": "3 days", "type": "Electrolyte Therapy", "instructions": "Maintain hydration and replace electrolyte losses."}
+    ],
+    "urinary tract infection": [
+        {"name": "Nitrofurantoin Monohydrate", "dosage": "100 mg", "frequency": "Twice daily (every 12 hrs)", "duration": "5 days", "type": "Urinary Antibacterial", "instructions": "Take with food or milk to prevent nausea and improve absorption."},
+        {"name": "Phenazopyridine HCl", "dosage": "200 mg", "frequency": "Three times daily after meals", "duration": "2 days", "type": "Urinary Tract Analgesic", "instructions": "Relieves dysuria and bladder spasms; causes harmless orange-red urine discoloration."},
+        {"name": "Potassium Magnesium Citrate", "dosage": "15 ml in glass of water", "frequency": "Twice daily", "duration": "5 days", "type": "Urinary Alkalinizer", "instructions": "Reduces urine acidity and burning sensation."}
+    ],
+    "uti": [
+        {"name": "Nitrofurantoin Monohydrate", "dosage": "100 mg", "frequency": "Twice daily (every 12 hrs)", "duration": "5 days", "type": "Urinary Antibacterial", "instructions": "Take with food or milk to prevent nausea."},
+        {"name": "Phenazopyridine HCl", "dosage": "200 mg", "frequency": "Three times daily after meals", "duration": "2 days", "type": "Urinary Tract Analgesic", "instructions": "Relieves dysuria and bladder spasms."},
+        {"name": "Potassium Magnesium Citrate", "dosage": "15 ml in glass of water", "frequency": "Twice daily", "duration": "5 days", "type": "Urinary Alkalinizer", "instructions": "Reduces urine acidity and burning sensation."}
+    ],
+    "migraine": [
+        {"name": "Sumatriptan Succinate", "dosage": "50 mg", "frequency": "At immediate onset of migraine", "duration": "Single dose (repeat in 2h if needed, max 200mg/24h)", "type": "5-HT1 Receptor Agonist (Triptan)", "instructions": "Take at earliest sign of throbbing headache or visual aura."},
+        {"name": "Naproxen Sodium", "dosage": "500 mg", "frequency": "Twice daily with meals", "duration": "3 days PRN", "type": "NSAID Analgesic", "instructions": "Take with food or antacid to prevent gastric irritation."},
+        {"name": "Domperidone / Ondansetron", "dosage": "10 mg / 4 mg", "frequency": "30 mins before food PRN", "duration": "2 days", "type": "Antiemetic", "instructions": "For migraine-associated nausea and gastric stasis."}
+    ],
+    "gastroesophageal reflux disease": [
+        {"name": "Pantoprazole Sodium EC", "dosage": "40 mg", "frequency": "Once daily in morning", "duration": "14 days", "type": "Proton Pump Inhibitor (PPI)", "instructions": "Take on an empty stomach at least 30-45 minutes before breakfast."},
+        {"name": "Sodium Alginate + Potassium Bicarbonate Suspension", "dosage": "10 ml", "frequency": "After meals and before bedtime", "duration": "7-10 days", "type": "Mucosal Barrier & Antacid", "instructions": "Forms protective raft over gastric contents; do not drink water immediately after."},
+        {"name": "Itopride HCl", "dosage": "50 mg", "frequency": "Three times daily before meals", "duration": "10 days", "type": "Prokinetic", "instructions": "Enhances gastric emptying."}
+    ],
+    "gerd": [
+        {"name": "Pantoprazole Sodium EC", "dosage": "40 mg", "frequency": "Once daily in morning", "duration": "14 days", "type": "Proton Pump Inhibitor (PPI)", "instructions": "Take on an empty stomach at least 30-45 minutes before breakfast."},
+        {"name": "Sodium Alginate Suspension", "dosage": "10 ml", "frequency": "After meals and before bedtime", "duration": "7-10 days", "type": "Mucosal Barrier & Antacid", "instructions": "Forms protective raft over gastric contents."}
+    ],
+    "appendicitis": [
+        {"name": "Ceftriaxone IV / Ciprofloxacin", "dosage": "1 g IV / 500 mg PO", "frequency": "Every 12 hours", "duration": "Hospital Triage", "type": "Broad-Spectrum Antibiotic", "instructions": "Administer under strict surgical observation prior to appendectomy."},
+        {"name": "Metronidazole", "dosage": "500 mg", "frequency": "Every 8 hours", "duration": "Hospital Triage", "type": "Anaerobic Antimicrobial", "instructions": "Cover intra-abdominal anaerobes."},
+        {"name": "Tramadol / Acetaminophen IV", "dosage": "50-100 mg", "frequency": "Every 8 hours PRN", "duration": "Acute Phase", "type": "Analgesic", "instructions": "Administered under emergency surgical guidance; NPO maintained."}
+    ],
+    "kidney stone": [
+        {"name": "Tamsulosin HCl", "dosage": "0.4 mg", "frequency": "Once daily after same meal", "duration": "14 days", "type": "Alpha-1 Blocker", "instructions": "Facilitates ureteral stone passage by relaxing smooth muscle."},
+        {"name": "Ketorolac / Ibuprofen", "dosage": "10 mg / 400 mg", "frequency": "Every 8 hours with meals PRN", "duration": "5 days", "type": "NSAID Analgesic", "instructions": "Potent relief for acute renal colic."},
+        {"name": "Potassium Citrate Liquid", "dosage": "15 ml in water", "frequency": "Twice daily after meals", "duration": "14 days", "type": "Urine Alkalinizer", "instructions": "Prevents stone crystallization."}
+    ],
+    "tonsillitis": [
+        {"name": "Amoxicillin-Clavulanate (Augmentin)", "dosage": "625 mg", "frequency": "Twice daily after meals", "duration": "5-7 days", "type": "Penicillin Antibiotic", "instructions": "Complete entire course even if throat pain subsides."},
+        {"name": "Flurbiprofen Lozenges", "dosage": "8.75 mg", "frequency": "Dissolve in mouth every 4-6 hours", "duration": "3-5 days", "type": "Topical Throat Anti-inflammatory", "instructions": "Do not chew or swallow whole; suck slowly."},
+        {"name": "Paracetamol", "dosage": "650 mg", "frequency": "Every 8 hours PRN", "duration": "3 days", "type": "Analgesic / Antipyretic", "instructions": "Take for odynophagia and fever relief."}
+    ],
+    "pharyngitis": [
+        {"name": "Amoxicillin-Clavulanate", "dosage": "625 mg", "frequency": "Twice daily after meals", "duration": "5-7 days", "type": "Penicillin Antibiotic", "instructions": "Complete entire course even if throat pain subsides."},
+        {"name": "Benzydamine Throat Spray / Lozenges", "dosage": "2-3 sprays / 1 lozenge", "frequency": "Every 4-6 hours PRN", "duration": "3-5 days", "type": "Analgesic Throat Spray", "instructions": "Provides local analgesic and anti-inflammatory action."}
+    ],
+    "gastroenteritis": [
+        {"name": "Oral Rehydration Salts (WHO Formula)", "dosage": "1 Sachet in 1 Litre boiled water", "frequency": "Drink after each loose stool", "duration": "3-4 days", "type": "Electrolyte Replenisher", "instructions": "Essential first-line therapy to prevent severe dehydration."},
+        {"name": "Zinc Sulfate Tablets", "dosage": "20 mg", "frequency": "Once daily after food", "duration": "10 days", "type": "Mucosal Repair Micronutrient", "instructions": "Accelerates intestinal epithelial healing."},
+        {"name": "Racecadotril", "dosage": "100 mg", "frequency": "Three times daily before meals", "duration": "3 days", "type": "Antisecretory Antidiarrheal", "instructions": "Reduces intestinal hypersecretion without slowing motility."},
+        {"name": "Probiotic Complex (S. boulardii)", "dosage": "250 mg (1 capsule)", "frequency": "Twice daily with water", "duration": "5 days", "type": "Intestinal Probiotic", "instructions": "Restores gut microflora balance."}
+    ],
+    "sinusitis": [
+        {"name": "Amoxicillin + Clavulanic Acid", "dosage": "625 mg", "frequency": "Twice daily after food", "duration": "7 days", "type": "Broad-Spectrum Antibiotic", "instructions": "Indicated if bacterial rhinosinusitis symptoms persist >7-10 days."},
+        {"name": "Fluticasone Furoate Nasal Spray", "dosage": "27.5 mcg/spray (2 sprays/nostril)", "frequency": "Once daily in morning", "duration": "14 days", "type": "Intranasal Corticosteroid", "instructions": "Shake bottle well before use; aim away from nasal septum."},
+        {"name": "Xylometazoline 0.1% Nasal Drops", "dosage": "2-3 drops per nostril", "frequency": "Twice daily", "duration": "3-5 days maximum", "type": "Decongestant", "instructions": "Do not use for more than 5 consecutive days to avoid rebound congestion."}
+    ],
+    "allergic rhinitis": [
+        {"name": "Levocetirizine Dihydrochloride + Montelukast", "dosage": "5 mg + 10 mg", "frequency": "Once daily at bedtime", "duration": "10 days", "type": "Antihistamine & Leukotriene Antagonist", "instructions": "Take at night; may cause mild drowsiness."},
+        {"name": "Mometasone Furoate Nasal Spray", "dosage": "50 mcg/actuation (2 sprays/nostril)", "frequency": "Once daily", "duration": "14 days", "type": "Intranasal Corticosteroid", "instructions": "Clear nasal passages before spraying."},
+        {"name": "Sodium Chloride 0.9% Isotonic Saline Rinse", "dosage": "2-3 sprays each nostril", "frequency": "Three times daily", "duration": "14 days", "type": "Nasal Wash", "instructions": "Clears airborne allergens and mucus."}
+    ],
+    "pneumonia": [
+        {"name": "Azithromycin", "dosage": "500 mg", "frequency": "Once daily 1 hr before or 2 hrs after food", "duration": "5 days", "type": "Macrolide Antibiotic", "instructions": "Take on an empty stomach with a full glass of water."},
+        {"name": "Amoxicillin + Clavulanate", "dosage": "875/125 mg", "frequency": "Twice daily with meals", "duration": "7-10 days", "type": "Broad-Spectrum Antibacterial", "instructions": "Strict compliance needed to eradicate lower respiratory infection."},
+        {"name": "Ambroxol + Guaiphenesin Expectorant Syrup", "dosage": "10 ml", "frequency": "Three times daily after food", "duration": "5 days", "type": "Mucolytic Expectorant", "instructions": "Drink plenty of warm fluids to help loosen bronchopulmonary secretions."}
+    ],
+    "otitis media": [
+        {"name": "Amoxicillin-Clavulanate", "dosage": "625 mg", "frequency": "Twice daily after meals", "duration": "7 days", "type": "Antibiotic", "instructions": "Standard first-line regimen for acute middle ear bacterial infection."},
+        {"name": "Ibuprofen + Paracetamol", "dosage": "400 mg + 325 mg", "frequency": "Every 8 hours after food PRN", "duration": "3-5 days", "type": "Analgesic / Anti-inflammatory", "instructions": "Effective for severe otalgia and fever."},
+        {"name": "Ciprofloxacin 0.3% Ear Drops", "dosage": "3-4 drops into affected ear", "frequency": "Twice daily", "duration": "7 days", "type": "Topical Otic Antibacterial", "instructions": "Lie with affected ear upward for 5 minutes after instillation."}
+    ],
+    "conjunctivitis": [
+        {"name": "Moxifloxacin 0.5% Ophthalmic Solution", "dosage": "1 drop in affected eye(s)", "frequency": "Three times daily", "duration": "7 days", "type": "Fluoroquinolone Antibacterial Eye Drops", "instructions": "Do not touch dropper tip to eye or skin surface; remove contact lenses."},
+        {"name": "Carboxymethylcellulose 0.5% Eye Drops", "dosage": "1-2 drops", "frequency": "4-6 times daily as needed", "duration": "10 days", "type": "Lubricating Artificial Tears", "instructions": "Soothes gritty sensation and ocular irritation."}
+    ],
+    "anemia": [
+        {"name": "Ferrous Ascorbate + Folic Acid", "dosage": "100 mg Elemental Iron + 1.5 mg FA", "frequency": "Once daily after lunch", "duration": "30-60 days", "type": "Hematinic Supplement", "instructions": "Take with orange juice or Vitamin C to enhance absorption; avoid tea/milk within 2 hours."},
+        {"name": "Vitamin B12 (Methylcobalamin)", "dosage": "1500 mcg", "frequency": "Once daily", "duration": "30 days", "type": "Neurotropic Vitamin", "instructions": "Supports erythrocyte maturation."}
+    ],
+    "diabetes": [
+        {"name": "Metformin Hydrochloride SR", "dosage": "500 mg", "frequency": "Twice daily with or immediately after meals", "duration": "Ongoing / 30 days", "type": "Biguanide Antidiabetic", "instructions": "Take with breakfast and dinner to minimize GI side effects; monitor blood glucose."},
+        {"name": "Glimepiride", "dosage": "1 mg", "frequency": "Once daily 15 mins before breakfast", "duration": "Ongoing / 30 days", "type": "Sulfonylurea Antidiabetic", "instructions": "Take before first main meal; carry fast-acting carbs for hypoglycemia."}
+    ],
+    "hypertension": [
+        {"name": "Telmisartan", "dosage": "40 mg", "frequency": "Once daily in morning", "duration": "Ongoing / 30 days", "type": "Angiotensin II Receptor Blocker (ARB)", "instructions": "Take consistently at same time each day; monitor BP regularly."},
+        {"name": "Amlodipine Besylate", "dosage": "5 mg", "frequency": "Once daily in morning", "duration": "Ongoing / 30 days", "type": "Calcium Channel Blocker", "instructions": "Monitor for peripheral pedal swelling."}
+    ],
+    "asthma": [
+        {"name": "Budecort (Budesonide + Formoterol Inhaler)", "dosage": "200 mcg / 6 mcg (2 puffs)", "frequency": "Twice daily (morning and night)", "duration": "Ongoing / 30 days", "type": "ICS + LABA Controller Inhaler", "instructions": "Use with spacer; rinse mouth with water after each inhalation."},
+        {"name": "Salbutamol / Albuterol Inhaler (Asthalin)", "dosage": "100 mcg (2 puffs)", "frequency": "Every 4-6 hours as needed for acute wheezing", "duration": "PRN Rescue", "type": "SABA Rapid Bronchodilator", "instructions": "Carry at all times for acute bronchospasm relief."}
+    ],
+    "influenza": [
+        {"name": "Oseltamivir Phosphate (Tamiflu)", "dosage": "75 mg", "frequency": "Twice daily (every 12 hours)", "duration": "5 days", "type": "Neuraminidase Antiviral", "instructions": "Initiate within 48 hours of symptom onset for maximum efficacy; take with food."},
+        {"name": "Paracetamol + Phenylephrine + Chlorpheniramine", "dosage": "500 mg + 10 mg + 2 mg", "frequency": "Three times daily after food", "duration": "3-5 days", "type": "Flu Symptom Relief Combination", "instructions": "Relieves body aches, fever, and rhinorrhea."}
+    ],
+    "common cold": [
+        {"name": "Paracetamol", "dosage": "500 mg", "frequency": "Every 6-8 hours PRN", "duration": "3-4 days", "type": "Antipyretic / Analgesic", "instructions": "For mild fever, headache, and malaise."},
+        {"name": "Cetirizine Hydrochloride", "dosage": "10 mg", "frequency": "Once daily at night", "duration": "5 days", "type": "2nd-Gen Antihistamine", "instructions": "Relieves sneezing, runny nose, and itchy eyes."},
+        {"name": "Normal Saline Nasal Spray (0.9% NaCl)", "dosage": "2 sprays in each nostril", "frequency": "3-4 times daily", "duration": "5 days", "type": "Nasal Moisturizer", "instructions": "Clears nasal congestion safely."}
+    ],
+    "bronchitis": [
+        {"name": "Amoxicillin-Clavulanate", "dosage": "625 mg", "frequency": "Twice daily after food", "duration": "5-7 days", "type": "Antibiotic", "instructions": "Indicated for purulent sputum and acute bacterial exacerbations."},
+        {"name": "Guaifenesin + Ambroxol Syrup", "dosage": "10 ml", "frequency": "Three times daily after meals", "duration": "5 days", "type": "Expectorant Mucolytic", "instructions": "Take with full glass of warm water to promote mucus clearance."}
+    ],
+    "eczema": [
+        {"name": "Hydrocortisone 1% / Mometasone 0.1% Cream", "dosage": "Thin layer applied to affected skin", "frequency": "Twice daily", "duration": "7-10 days", "type": "Topical Corticosteroid", "instructions": "Apply sparingly to active rash; do not apply on broken skin or face unless prescribed."},
+        {"name": "Ceramide & Colloidal Oatmeal Emollient Lotion", "dosage": "Liberal application", "frequency": "3-4 times daily and immediately after bathing", "duration": "Ongoing", "type": "Barrier Repair Moisturizer", "instructions": "Locks in hydration and restores epidermal barrier."}
+    ],
+    "gout": [
+        {"name": "Colchicine", "dosage": "0.5 mg", "frequency": "1 tab twice daily", "duration": "3-5 days", "type": "Anti-Gout Anti-inflammatory", "instructions": "Take at earliest onset of acute flare; stop if diarrhea occurs."},
+        {"name": "Indomethacin / Etoricoxib", "dosage": "50 mg / 90 mg", "frequency": "Once or twice daily with food", "duration": "5 days", "type": "NSAID Analgesic", "instructions": "Rapid relief for severe acute joint inflammation."}
+    ],
+    "meningitis": [
+        {"name": "Ceftriaxone IV + Vancomycin IV", "dosage": "2 g IV q12h + 15-20 mg/kg q8-12h", "frequency": "Inpatient IV Infusion", "duration": "Emergency Inpatient Protocol", "type": "Empirical High-Dose Meningeal Antibiotics", "instructions": "Immediate hospital ICU administration under emergency care."},
+        {"name": "Dexamethasone IV", "dosage": "10 mg IV", "frequency": "q6h with or before first antibiotic dose", "duration": "4 days", "type": "Adjunctive Corticosteroid", "instructions": "Reduces cerebral inflammation and neurological complications."}
+    ],
+    "typhoid": [
+        {"name": "Cefixime / Azithromycin", "dosage": "200 mg q12h / 500 mg q24h", "frequency": "Twice daily after food", "duration": "7-14 days", "type": "Enteric Antimicrobial", "instructions": "Complete entire course and maintain strict hand hygiene."},
+        {"name": "Paracetamol", "dosage": "650 mg", "frequency": "Every 6 hours PRN", "duration": "5 days", "type": "Antipyretic", "instructions": "For step-ladder enteric fever control."}
+    ],
+    "dengue": [
+        {"name": "Paracetamol", "dosage": "500-650 mg", "frequency": "Every 6-8 hours PRN (Max 3g/day)", "duration": "5 days", "type": "Antipyretic (Non-NSAID)", "instructions": "STRICT WARNING: Avoid NSAIDs (aspirin, ibuprofen, diclofenac) due to bleeding risks."},
+        {"name": "Oral Rehydration Solution (ORS)", "dosage": "2-3 Litres daily", "frequency": "Frequent sips throughout the day", "duration": "5-7 days", "type": "Intravenous / Oral Volume Expander", "instructions": "Essential to prevent plasma leakage and hemoconcentration."}
+    ],
+    "general condition": [
+        {"name": "Paracetamol", "dosage": "500 mg", "frequency": "Every 6-8 hours as needed", "duration": "3 days", "type": "Analgesic / Antipyretic", "instructions": "For mild discomfort or fever."},
+        {"name": "Multivitamin & Mineral Complex", "dosage": "1 tablet", "frequency": "Once daily after breakfast", "duration": "14 days", "type": "Nutritional Support", "instructions": "Provides baseline micronutrient support."},
+        {"name": "Oral Hydration Solution (ORS)", "dosage": "1 Sachet in 1L water", "frequency": "Sip throughout day", "duration": "3 days", "type": "Hydration Fluid", "instructions": "Maintains cellular electrolyte balance."}
+    ]
+}
 
 class MLEngine:
     model = None
@@ -355,6 +497,81 @@ class MLEngine:
         return None
 
     @classmethod
+    def get_ai_medications_for_disease(cls, disease_name: str) -> List[Dict[str, str]]:
+        """Retrieve structured AI-recommended clinical medication protocols for a given condition."""
+        if not disease_name:
+            return DISEASE_MEDICATIONS_DB.get("general condition", [])
+
+        name_lower = disease_name.lower().strip()
+
+        # 1. Direct or substring match in keys
+        for key, meds in DISEASE_MEDICATIONS_DB.items():
+            if key in name_lower or name_lower in key:
+                return meds
+
+        # 2. Specific clinical keywords mapping
+        if any(k in name_lower for k in ["covid", "sars-cov-2", "corona"]):
+            return DISEASE_MEDICATIONS_DB["covid"]
+        if any(k in name_lower for k in ["uti", "urinary", "cystitis", "bladder"]):
+            return DISEASE_MEDICATIONS_DB["urinary tract infection"]
+        if any(k in name_lower for k in ["migraine", "cephalgia", "vascular headache"]):
+            return DISEASE_MEDICATIONS_DB["migraine"]
+        if any(k in name_lower for k in ["gerd", "acid reflux", "esophageal", "heartburn"]):
+            return DISEASE_MEDICATIONS_DB["gastroesophageal reflux disease"]
+        if any(k in name_lower for k in ["appendicitis", "appendix", "mcburney"]):
+            return DISEASE_MEDICATIONS_DB["appendicitis"]
+        if any(k in name_lower for k in ["stone", "nephrolithiasis", "renal colic"]):
+            return DISEASE_MEDICATIONS_DB["kidney stone"]
+        if any(k in name_lower for k in ["tonsil", "strep", "throat", "pharyngitis"]):
+            return DISEASE_MEDICATIONS_DB["tonsillitis"]
+        if any(k in name_lower for k in ["gastroenteritis", "stomach bug", "diarrhea", "food poisoning"]):
+            return DISEASE_MEDICATIONS_DB["gastroenteritis"]
+        if any(k in name_lower for k in ["sinus"]):
+            return DISEASE_MEDICATIONS_DB["sinusitis"]
+        if any(k in name_lower for k in ["allergy", "rhinitis", "hay fever"]):
+            return DISEASE_MEDICATIONS_DB["allergic rhinitis"]
+        if any(k in name_lower for k in ["pneumonia"]):
+            return DISEASE_MEDICATIONS_DB["pneumonia"]
+        if any(k in name_lower for k in ["otitis", "ear"]):
+            return DISEASE_MEDICATIONS_DB["otitis media"]
+        if any(k in name_lower for k in ["conjunctivitis", "pink eye", "eye infection"]):
+            return DISEASE_MEDICATIONS_DB["conjunctivitis"]
+        if any(k in name_lower for k in ["anemia", "iron deficiency"]):
+            return DISEASE_MEDICATIONS_DB["anemia"]
+        if any(k in name_lower for k in ["diabetes", "hyperglycemia", "glucose"]):
+            return DISEASE_MEDICATIONS_DB["diabetes"]
+        if any(k in name_lower for k in ["hypertension", "high blood pressure", "hypertensive"]):
+            return DISEASE_MEDICATIONS_DB["hypertension"]
+        if any(k in name_lower for k in ["asthma", "bronchospasm", "wheezing"]):
+            return DISEASE_MEDICATIONS_DB["asthma"]
+        if any(k in name_lower for k in ["flu", "influenza"]):
+            return DISEASE_MEDICATIONS_DB["influenza"]
+        if any(k in name_lower for k in ["cold", "coryza", "viral respiratory"]):
+            return DISEASE_MEDICATIONS_DB["common cold"]
+        if any(k in name_lower for k in ["bronchitis"]):
+            return DISEASE_MEDICATIONS_DB["bronchitis"]
+        if any(k in name_lower for k in ["eczema", "dermatitis"]):
+            return DISEASE_MEDICATIONS_DB["eczema"]
+        if any(k in name_lower for k in ["gout", "hyperuricemia"]):
+            return DISEASE_MEDICATIONS_DB["gout"]
+        if any(k in name_lower for k in ["meningitis"]):
+            return DISEASE_MEDICATIONS_DB["meningitis"]
+        if any(k in name_lower for k in ["typhoid"]):
+            return DISEASE_MEDICATIONS_DB["typhoid"]
+        if any(k in name_lower for k in ["dengue"]):
+            return DISEASE_MEDICATIONS_DB["dengue"]
+        if any(k in name_lower for k in ["malaria"]):
+            return DISEASE_MEDICATIONS_DB["malaria"]
+
+        # 3. Fuzzy match against keys
+        keys = list(DISEASE_MEDICATIONS_DB.keys())
+        match, score = process.extractOne(name_lower, keys)
+        if score >= 60 and match in DISEASE_MEDICATIONS_DB:
+            return DISEASE_MEDICATIONS_DB[match]
+
+        return DISEASE_MEDICATIONS_DB["general condition"]
+
+    @classmethod
     def run_prediction(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute clinical prediction engine supporting both dataset and unlisted diseases."""
         if cls.model is None or cls.features is None:
@@ -463,6 +680,7 @@ class MLEngine:
             )
 
         normalized_text = cls.normalize_user_symptom(text_raw)
+        ai_medicines = cls.get_ai_medications_for_disease(predicted_disease)
 
         return {
             "predicted_disease": predicted_disease,
@@ -471,5 +689,6 @@ class MLEngine:
             "recommendations": recommendations,
             "normalized_symptom": normalized_text,
             "indicators": indicators,
-            "severity_weight": total_weight
+            "severity_weight": total_weight,
+            "ai_medicines": ai_medicines
         }

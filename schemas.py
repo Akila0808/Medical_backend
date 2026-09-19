@@ -115,6 +115,29 @@ class SymptomPredictRequest(BaseModel):
         val = v.strip().capitalize()
         return val if val in ["Normal", "High", "Low"] else "Normal"
 
+class MedicineItem(BaseModel):
+    name: str = Field(..., min_length=1, description="Medication commercial or generic name")
+    dosage: str = Field(..., min_length=1, description="Dosage specification e.g. 500 mg")
+    frequency: str = Field(..., min_length=1, description="Dosage frequency e.g. Twice daily after meals")
+    duration: str = Field(..., min_length=1, description="Treatment duration e.g. 5 days")
+    type: Optional[str] = "Prescription Medication"
+    instructions: Optional[str] = "Take as directed by physician"
+
+class PrescriptionSubmitRequest(BaseModel):
+    log_id: str = Field(..., description="ID of the symptom log or triage file")
+    patient_email: EmailStr
+    doctor_email: Optional[EmailStr] = None
+    doctor_name: Optional[str] = "Doctor"
+    diagnosis: str
+    medicines: List[MedicineItem]
+    doctor_notes: Optional[str] = ""
+    case_status: Optional[str] = "Under Treatment"
+
+class MedicineSuggestionsResponse(BaseModel):
+    status: str = "success"
+    disease: str
+    suggestions: List[MedicineItem]
+
 class PredictionResponse(BaseModel):
     status: str = "success"
     predicted_disease: str
@@ -122,6 +145,7 @@ class PredictionResponse(BaseModel):
     risk_level: str
     recommendations: str
     normalized_symptom: Optional[str] = None
+    ai_medicines: Optional[List[MedicineItem]] = []
 
 class RecommendationRequest(BaseModel):
     disease: Optional[str] = "General Condition"
@@ -183,6 +207,12 @@ class PatientProfileItem(BaseModel):
     risk_level: str
     confidence_score: Optional[str] = None
     created_at: Optional[str] = None
+    ai_medicines: Optional[List[MedicineItem]] = []
+    prescriptions: Optional[List[MedicineItem]] = []
+    doctor_notes: Optional[str] = ""
+    prescribed_at: Optional[str] = None
+    prescribed_by: Optional[str] = None
+    status: Optional[str] = "Awaiting Review"
 
 class AnalyticsResponse(BaseModel):
     status: str = "success"

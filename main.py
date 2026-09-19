@@ -28,6 +28,9 @@ from schemas import (
     PatientProfileItem,
     AnalyticsResponse,
     ProfileUpdateRequest,
+    MedicineItem,
+    PrescriptionSubmitRequest,
+    MedicineSuggestionsResponse,
 )
 
 logging.basicConfig(
@@ -327,6 +330,8 @@ def predict_disease(
             detail=f"Disease prediction engine failed: {str(e)}"
         )
 
+    ai_meds = prediction_result.get("ai_medicines", [])
+
     # Persist prediction in symptoms_log collection
     symptoms_log_col = DatabaseManager.get_symptoms_log_collection()
     log_doc = {
@@ -338,6 +343,11 @@ def predict_disease(
         "confidence_score": prediction_result["confidence_score"],
         "risk_level": prediction_result["risk_level"],
         "normalized_symptom": prediction_result["normalized_symptom"],
+        "ai_medicines": ai_meds,
+        "prescriptions": [],
+        "doctor_notes": "",
+        "status": "Awaiting Review",
+        "reviewed_by_doctor": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
 
@@ -352,8 +362,80 @@ def predict_disease(
         confidence_score=prediction_result["confidence_score"],
         risk_level=prediction_result["risk_level"],
         recommendations=prediction_result["recommendations"],
-        normalized_symptom=prediction_result["normalized_symptom"]
+        normalized_symptom=prediction_result["normalized_symptom"],
+        ai_medicines=[MedicineItem(**m) for m in ai_meds]
     )
+
+@app.get("/api/medicines/suggestions", response_model=MedicineSuggestionsResponse, tags=["AI Diagnostics"])
+def get_medicine_suggestions(
+    disease: str = Query(..., description="Target disease or syndrome"),
+    current_user: dict = Depends(verify_jwt_token)
+):
+    """Fetch AI medication guidance protocols based on clinical diagnostic condition."""
+    meds_raw = MLEngine.get_ai_medications_for_disease(disease)
+    med_items = [MedicineItem(**m) for m in meds_raw]
+    return MedicineSuggestionsResponse(
+        status="success",
+        disease=disease,
+        suggestions=med_items
+    )
+
+@app.post("/api/triage/prescribe", tags=["Doctor Clinical Triage"])
+def issue_prescription(
+    prescription_data: PrescriptionSubmitRequest,
+    current_user: dict = Depends(verify_jwt_token)
+):
+    """Doctor reviews, modifies, and officially signs clinical medication prescription."""
+    symptoms_col = DatabaseManager.get_symptoms_log_collection()
+    log_id = prescription_data.log_id
+
+    try:
+        query = {"_id": ObjectId(log_id)}
+    except InvalidId:
+        query = {"_id": log_id}
+
+    existing_log = symptoms_col.find_one(query)
+    if not existing_log:
+        # Fallback to searching latest log for patient email
+        existing_log = symptoms_col.find_one(
+            {"email": prescription_data.patient_email.lower()},
+            sort=[("_id", -1)]
+        )
+        if not existing_log:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Clinical record for '{prescription_data.patient_email}' not found."
+            )
+        query = {"_id": existing_log["_id"]}
+
+    doctor_email = current_user.get("sub", prescription_data.doctor_email or "")
+    doctor_name = current_user.get("full_name", prescription_data.doctor_name or "Doctor")
+
+    meds_list = [m.model_dump() for m in prescription_data.medicines]
+
+    update_payload = {
+        "prescriptions": meds_list,
+        "doctor_notes": prescription_data.doctor_notes,
+        "doctor_name": doctor_name,
+        "doctor_email": doctor_email,
+        "prescribed_by": doctor_name,
+        "prescribed_at": datetime.now(timezone.utc).isoformat(),
+        "status": prescription_data.case_status or "Under Treatment",
+        "reviewed_by_doctor": True,
+        "updated_at": datetime.now(timezone.utc).isoformat()
+    }
+
+    symptoms_col.update_one(query, {"$set": update_payload})
+    logger.info(f"Prescription successfully registered for log {query['_id']} by Dr. {doctor_name}")
+
+    return {
+        "status": "success",
+        "message": f"Prescription signed and issued with {len(meds_list)} medications.",
+        "log_id": str(query["_id"]),
+        "prescriptions": meds_list,
+        "prescribed_by": doctor_name,
+        "prescribed_at": update_payload["prescribed_at"]
+    }
 
 # ---------------------------------------------------------------------------
 # 3. Recommendations & Analytics
@@ -613,6 +695,17 @@ def get_patients(current_user: dict = Depends(verify_jwt_token)):
         risk_val = s.get("risk_level", "Low")
         conf_val = s.get("confidence_score", "90.00%")
 
+        ai_meds = s.get("ai_medicines")
+        if not ai_meds:
+            ai_meds = MLEngine.get_ai_medications_for_disease(prediction_val)
+
+        prescriptions = s.get("prescriptions", [])
+        doctor_notes = s.get("doctor_notes", "")
+        prescribed_by = s.get("prescribed_by") or s.get("doctor_name", "")
+        prescribed_at = s.get("prescribed_at")
+        case_status = s.get("status", "Reviewed" if prescriptions else "Awaiting Review")
+        reviewed_flag = s.get("reviewed_by_doctor", bool(prescriptions or doctor_notes))
+
         patients_list.append({
             "id": str(s["_id"]),
             "email": email,
@@ -626,7 +719,15 @@ def get_patients(current_user: dict = Depends(verify_jwt_token)):
             "prediction": prediction_val,
             "risk_level": risk_val,
             "confidence_score": conf_val,
-            "created_at": s.get("created_at")
+            "created_at": s.get("created_at"),
+            "ai_medicines": ai_meds,
+            "prescriptions": prescriptions,
+            "doctor_notes": doctor_notes,
+            "prescribed_by": prescribed_by,
+            "prescribed_at": prescribed_at,
+            "status": case_status,
+            "reviewed_by_doctor": reviewed_flag,
+            "indicators": s.get("indicators", {})
         })
 
     # Include newly registered patients who have not submitted symptom logs yet
@@ -646,7 +747,15 @@ def get_patients(current_user: dict = Depends(verify_jwt_token)):
                 "prediction": "Pending Clinical Assessment",
                 "risk_level": "Low",
                 "confidence_score": "N/A",
-                "created_at": p.get("created_at")
+                "created_at": p.get("created_at"),
+                "ai_medicines": [],
+                "prescriptions": [],
+                "doctor_notes": "",
+                "prescribed_by": "",
+                "prescribed_at": None,
+                "status": "Pending Assessment",
+                "reviewed_by_doctor": False,
+                "indicators": {}
             })
 
     return {"patients": patients_list}
